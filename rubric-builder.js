@@ -12,6 +12,20 @@
     }
     function escNL(str) { return esc(str).replace(/\n/g, '<br>'); }
 
+    // Looks up a user-facing string from window.RB_STRINGS (populated by
+    // lib.php via get_string()), falling back to a hardcoded English string
+    // only if RB_STRINGS somehow isn't available — this keeps the plugin
+    // from breaking outright rather than as a substitute for translations.
+    function t(key, fallback) {
+        return (typeof window.RB_STRINGS !== 'undefined' && window.RB_STRINGS[key] !== undefined)
+            ? window.RB_STRINGS[key]
+            : fallback;
+    }
+    // Same as t(), but substitutes a single {$a} placeholder with the given value.
+    function ta(key, a, fallback) {
+        return t(key, fallback).replace('{$a}', a);
+    }
+
     // -------------------------------------------------------------------------
     // HTML Generators
     // -------------------------------------------------------------------------
@@ -115,35 +129,35 @@
     }
 
     function confirmClose() {
-        if (confirm('Close Rubric Builder? Unsaved changes will be lost.')) closeBuilder();
+        if (confirm(t('confirmcloseunsaved', 'Close Rubric Builder? Unsaved changes will be lost.'))) closeBuilder();
     }
 
     function buildModalHTML() {
         return [
             '<div id="' + MODAL_ID + '">',
             '  <div id="rb-header">',
-            '    <span id="rb-title">&#128203; Rubric Builder</span>',
-            '    <button id="rb-close" title="Close">&times;</button>',
+            '    <span id="rb-title">&#128203; ' + esc(t('modaltitle', 'Rubric Builder')) + '</span>',
+            '    <button id="rb-close" title="' + esc(t('close', 'Close')) + '">&times;</button>',
             '  </div>',
             '  <div id="rb-tabs">',
-            '    <button class="rb-tab rb-tab-active" data-mode="rubric">Rubric</button>',
-            '    <button class="rb-tab" data-mode="marking-guide">Marking Guide</button>',
-            '    <button class="rb-tab rb-tab-right" data-mode="templates">&#128190; Templates</button>',
+            '    <button class="rb-tab rb-tab-active" data-mode="rubric">' + esc(t('tabrubric', 'Rubric')) + '</button>',
+            '    <button class="rb-tab" data-mode="marking-guide">' + esc(t('tabmarkingguide', 'Marking Guide')) + '</button>',
+            '    <button class="rb-tab rb-tab-right" data-mode="templates">&#128190; ' + esc(t('tabtemplates', 'Templates')) + '</button>',
             '  </div>',
 
             '  <div id="rb-name-bar">',
-            '    <label for="rb-global-name">Template name</label>',
-            '    <input id="rb-global-name" class="rb-input" type="text" placeholder="e.g. Describe Image — General Rubric">',
-            '    <span class="rb-hint" id="rb-name-bar-hint">Only needed if you plan to save this as a reusable template.</span>',
+            '    <label for="rb-global-name">' + esc(t('templatenamelabel', 'Template name')) + '</label>',
+            '    <input id="rb-global-name" class="rb-input" type="text" placeholder="' + esc(t('templatenameplaceholder', 'e.g. Describe Image — General Rubric')) + '">',
+            '    <span class="rb-hint" id="rb-name-bar-hint">' + esc(t('templatenamehint', 'Only needed if you plan to save this as a reusable template.')) + '</span>',
             '  </div>',
 
             '  <!-- RUBRIC PANEL -->',
             '  <div id="rb-rubric-panel" class="rb-panel">',
             '    <div class="rb-section-title">',
-            '      Criteria rows',
-            '      <button class="rb-small-btn" id="rb-add-row">+ Add criterion</button>',
-            '      <span class="rb-hint">Each cell has its own score value. Rows can have different numbers of cells.</span>',
-            '      <span class="rb-max-badge" id="rb-rubric-max-badge">Max possible: <strong id="rb-rubric-max-value">0</strong></span>',
+            '      ' + esc(t('criteriarows', 'Criteria rows')),
+            '      <button class="rb-small-btn" id="rb-add-row">' + esc(t('addcriterion', '+ Add criterion')) + '</button>',
+            '      <span class="rb-hint">' + esc(t('rubrichint', 'Each cell has its own score value. Rows can have different numbers of cells.')) + '</span>',
+            '      <span class="rb-max-badge" id="rb-rubric-max-badge">' + esc(t('maxpossible', 'Max possible:')) + ' <strong id="rb-rubric-max-value">0</strong></span>',
             '    </div>',
             '    <div id="rb-rows-body"></div>',
             '  </div>',
@@ -151,12 +165,12 @@
             '  <!-- MARKING GUIDE PANEL -->',
             '  <div id="rb-mg-panel" class="rb-panel" style="display:none;">',
             '    <div class="rb-section-title">',
-            '      Criteria',
-            '      <button class="rb-small-btn" id="rb-mg-add-row">+ Add criterion</button>',
-            '      <span class="rb-max-badge" id="rb-mg-max-badge">Max possible: <strong id="rb-mg-max-value">0</strong></span>',
+            '      ' + esc(t('criteria', 'Criteria')),
+            '      <button class="rb-small-btn" id="rb-mg-add-row">' + esc(t('addcriterion', '+ Add criterion')) + '</button>',
+            '      <span class="rb-max-badge" id="rb-mg-max-badge">' + esc(t('maxpossible', 'Max possible:')) + ' <strong id="rb-mg-max-value">0</strong></span>',
             '    </div>',
             '    <table id="rb-mg-table">',
-            '      <thead><tr><th>Criterion label</th><th>Description</th><th>Max marks</th><th></th></tr></thead>',
+            '      <thead><tr><th>' + esc(t('criterionlabelheader', 'Criterion label')) + '</th><th>' + esc(t('descriptionheader', 'Description')) + '</th><th>' + esc(t('maxmarksheader', 'Max marks')) + '</th><th></th></tr></thead>',
             '      <tbody id="rb-mg-body"></tbody>',
             '    </table>',
             '  </div>',
@@ -164,25 +178,25 @@
             '  <!-- TEMPLATES PANEL -->',
             '  <div id="rb-templates-panel" class="rb-panel" style="display:none;">',
             '    <div class="rb-tpl-toolbar">',
-            '      <div class="rb-section-title" style="margin:0;">Saved Templates</div>',
-            '      <button class="rb-small-btn" id="rb-tpl-refresh">&#8635; Refresh</button>',
+            '      <div class="rb-section-title" style="margin:0;">' + esc(t('savedtemplates', 'Saved Templates')) + '</div>',
+            '      <button class="rb-small-btn" id="rb-tpl-refresh">&#8635; ' + esc(t('refresh', 'Refresh')) + '</button>',
             '    </div>',
             '    <div id="rb-tpl-editing-indicator" style="display:none;">',
-            '      <span>&#9998; Editing <strong id="rb-tpl-editing-name"></strong> — changes here won\'t affect the saved template until you update it.</span>',
-            '      <button id="rb-tpl-editing-clear" class="rb-small-btn">Start new (clear)</button>',
+            '      <span>&#9998; ' + esc(t('editingprefix', 'Editing')) + ' <strong id="rb-tpl-editing-name"></strong> ' + esc(t('editingsuffix', '— changes here won\'t affect the saved template until you update it.')) + '</span>',
+            '      <button id="rb-tpl-editing-clear" class="rb-small-btn">' + esc(t('startnewclear', 'Start new (clear)')) + '</button>',
             '    </div>',
             '    <div id="rb-tpl-save-wrap">',
-            '      <span class="rb-hint">Uses the "Template name" field above.</span>',
-            '      <button id="rb-tpl-save-new" class="rb-small-btn rb-tpl-save-btn">&#128190; Save as new template</button>',
-            '      <button id="rb-tpl-update" class="rb-small-btn rb-tpl-update-btn" disabled>&#128260; Update loaded template</button>',
+            '      <span class="rb-hint">' + esc(t('usestemplatenamefield', 'Uses the "Template name" field above.')) + '</span>',
+            '      <button id="rb-tpl-save-new" class="rb-small-btn rb-tpl-save-btn">&#128190; ' + esc(t('saveasnewtemplate', 'Save as new template')) + '</button>',
+            '      <button id="rb-tpl-update" class="rb-small-btn rb-tpl-update-btn" disabled>&#128260; ' + esc(t('updateloadedtemplate', 'Update loaded template')) + '</button>',
             '    </div>',
-            '    <div id="rb-tpl-list"><div class="rb-tpl-loading">Loading templates...</div></div>',
+            '    <div id="rb-tpl-list"><div class="rb-tpl-loading">' + esc(t('loadingtemplates', 'Loading templates...')) + '</div></div>',
             '  </div>',
 
             '  <div id="rb-footer">',
-            '    <button id="rb-cancel">Cancel</button>',
-            '    <button id="rb-save-insert">&#128190; Save as Template &amp; Insert</button>',
-            '    <button id="rb-insert">&#10003; Insert into editor</button>',
+            '    <button id="rb-cancel">' + esc(t('cancel', 'Cancel')) + '</button>',
+            '    <button id="rb-save-insert">&#128190; ' + esc(t('saveastemplateandinsert', 'Save as Template &amp; Insert')) + '</button>',
+            '    <button id="rb-insert">&#10003; ' + esc(t('insertintoeditor', 'Insert into editor')) + '</button>',
             '  </div>',
             '</div>'
         ].join('\n');
@@ -332,10 +346,10 @@
             // Row header
             var header = '<div class="rb-row-header">';
             header += '<span class="rb-drag-handle" draggable="true" data-ri="' + ri + '" title="Drag to reorder">&#8597;</span>';
-            header += '<input class="rb-row-label rb-input" type="text" value="' + esc(row.label) + '" data-ri="' + ri + '" placeholder="Criterion label">';
-            header += '<button class="rb-small-btn rb-add-col" data-ri="' + ri + '" style="white-space:nowrap;">+ Add cell</button>';
-            header += '<button class="rb-copy-btn rb-copy-row" data-ri="' + ri + '">&#10063; Copy</button>';
-            header += '<button class="rb-del-btn rb-del-row" data-ri="' + ri + '">&times; Remove</button>';
+            header += '<input class="rb-row-label rb-input" type="text" value="' + esc(row.label) + '" data-ri="' + ri + '" placeholder="' + esc(t('criterionlabelplaceholder', 'Criterion label')) + '">';
+            header += '<button class="rb-small-btn rb-add-col" data-ri="' + ri + '" style="white-space:nowrap;">' + esc(t('addcell', '+ Add cell')) + '</button>';
+            header += '<button class="rb-copy-btn rb-copy-row" data-ri="' + ri + '">&#10063; ' + esc(t('copybtn', 'Copy')) + '</button>';
+            header += '<button class="rb-del-btn rb-del-row" data-ri="' + ri + '">&times; ' + esc(t('removebtn', 'Remove')) + '</button>';
             header += '</div>';
 
             // Cells grid — each cell has score + description
@@ -343,11 +357,11 @@
             row.cols.forEach(function(col, ci) {
                 cells += '<div class="rb-col-block">';
                 cells += '<div class="rb-col-score-row">';
-                cells += '<label class="rb-cell-label">Score</label>';
+                cells += '<label class="rb-cell-label">' + esc(t('scorelabel', 'Score')) + '</label>';
                 cells += '<input class="rb-col-score rb-input rb-input-sm" type="number" value="' + esc(col.score) + '" data-ri="' + ri + '" data-ci="' + ci + '" min="0" step="0.5" placeholder="0">';
                 cells += '<button class="rb-del-btn rb-del-col" data-ri="' + ri + '" data-ci="' + ci + '" style="padding:2px 6px;font-size:11px;">&times;</button>';
                 cells += '</div>';
-                cells += '<textarea class="rb-col-desc rb-cell-text" data-ri="' + ri + '" data-ci="' + ci + '" rows="4" placeholder="Cell description...">' + esc(col.desc) + '</textarea>';
+                cells += '<textarea class="rb-col-desc rb-cell-text" data-ri="' + ri + '" data-ci="' + ci + '" rows="4" placeholder="' + esc(t('celldescplaceholder', 'Cell description...')) + '">' + esc(col.desc) + '</textarea>';
                 cells += '</div>';
             });
             cells += '</div>';
@@ -554,7 +568,7 @@
         document.getElementById('rb-tpl-save-new').addEventListener('click', function() { saveTemplateAs(true); });
         document.getElementById('rb-tpl-update').addEventListener('click', function() { saveTemplateAs(false); });
         document.getElementById('rb-tpl-editing-clear').addEventListener('click', function() {
-            if (state.loadedTemplateId && !confirm('Stop editing "' + state.loadedTemplateName + '" and start a blank rubric? Unsaved changes here will be lost.')) return;
+            if (state.loadedTemplateId && !confirm(ta('confirmstopediting', state.loadedTemplateName, 'Stop editing "{$a}" and start a blank rubric? Unsaved changes here will be lost.'))) return;
             resetState();
             var nameEl = document.getElementById('rb-global-name');
             if (nameEl) nameEl.value = '';
@@ -579,7 +593,7 @@
             var html = generateCurrentHtml(); // also syncs state.rows/mgRows so templatedata below is current
             var nameEl = document.getElementById('rb-global-name');
             var name = nameEl ? nameEl.value.trim() : '';
-            if (!name) { focusNameFieldWithError('Enter a template name above to save & insert.'); return; }
+            if (!name) { focusNameFieldWithError(t('errorenternametoinsert', 'Enter a template name above to save & insert.')); return; }
 
             var templatedata = JSON.stringify({rows: state.rows, mgRows: state.mgRows});
             var payload = {action: 'save', name: name, mode: state.mode, templatedata: templatedata};
@@ -588,7 +602,7 @@
             }
             apiRequest(payload).then(function(data) {
                 if (data.error) {
-                    alert('Could not save the template, so nothing was inserted either.\n\nError: ' + data.error);
+                    alert(ta('errorsavefailednotinserted', data.error, 'Could not save the template, so nothing was inserted either. Error: {$a}'));
                     return;
                 }
                 state.loadedTemplateId = data.id;
@@ -650,7 +664,7 @@
             // already know will be rejected — this makes the real cause
             // immediately obvious instead of surfacing as a generic
             // session-timeout alert from the server round-trip.
-            return Promise.resolve({error: 'Could not find a valid session key (sesskey) on this page. Try reloading the page before saving.'});
+            return Promise.resolve({error: t('errornosesskey', 'Could not find a valid session key (sesskey) on this page. Try reloading the page before saving.')});
         }
         return rawRequest(params).then(function(data) {
             // The client's cached sesskey can drift out of sync with what
@@ -675,29 +689,29 @@
     function loadTemplateList() {
         var listEl = document.getElementById('rb-tpl-list');
         if (!listEl) return;
-        listEl.innerHTML = '<div class="rb-tpl-loading">Loading...</div>';
+        listEl.innerHTML = '<div class="rb-tpl-loading">' + esc(t('loadingdots', 'Loading...')) + '</div>';
         apiRequest({action: 'list'}).then(function(data) {
-            if (!data.templates || !data.templates.length) { listEl.innerHTML = '<div class="rb-tpl-empty">No templates saved yet.</div>'; return; }
-            var html = '<table class="rb-tpl-table"><thead><tr><th>Name</th><th>Type</th><th>Saved by</th><th>Date</th><th></th></tr></thead><tbody>';
-            data.templates.forEach(function(t) {
-                var modeLabel = t.mode === 'marking-guide' ? 'Marking Guide' : 'Rubric';
-                html += '<tr><td><strong>' + esc(t.name) + '</strong></td>';
-                html += '<td><span class="rb-tpl-badge rb-tpl-badge-' + esc(t.mode) + '">' + modeLabel + '</span></td>';
-                html += '<td>' + esc(t.createdbyname) + '</td><td>' + new Date(t.timemodified*1000).toLocaleDateString() + '</td>';
-                html += '<td class="rb-tpl-actions"><button class="rb-small-btn rb-tpl-load-btn" data-id="' + t.id + '">&#9654; Load</button>';
-                html += '<button class="rb-del-btn rb-tpl-del-btn" data-id="' + t.id + '">&times;</button></td></tr>';
+            if (!data.templates || !data.templates.length) { listEl.innerHTML = '<div class="rb-tpl-empty">' + esc(t('notemplatessaved', 'No templates saved yet.')) + '</div>'; return; }
+            var html = '<table class="rb-tpl-table"><thead><tr><th>' + esc(t('colname', 'Name')) + '</th><th>' + esc(t('coltype', 'Type')) + '</th><th>' + esc(t('colsavedby', 'Saved by')) + '</th><th>' + esc(t('coldate', 'Date')) + '</th><th></th></tr></thead><tbody>';
+            data.templates.forEach(function(t2) {
+                var modeLabel = t2.mode === 'marking-guide' ? t('tabmarkingguide', 'Marking Guide') : t('tabrubric', 'Rubric');
+                html += '<tr><td><strong>' + esc(t2.name) + '</strong></td>';
+                html += '<td><span class="rb-tpl-badge rb-tpl-badge-' + esc(t2.mode) + '">' + esc(modeLabel) + '</span></td>';
+                html += '<td>' + esc(t2.createdbyname) + '</td><td>' + new Date(t2.timemodified*1000).toLocaleDateString() + '</td>';
+                html += '<td class="rb-tpl-actions"><button class="rb-small-btn rb-tpl-load-btn" data-id="' + t2.id + '">&#9654; ' + esc(t('loadbtn', 'Load')) + '</button>';
+                html += '<button class="rb-del-btn rb-tpl-del-btn" data-id="' + t2.id + '">&times;</button></td></tr>';
             });
             listEl.innerHTML = html + '</tbody></table>';
-        }).catch(function() { listEl.innerHTML = '<div class="rb-tpl-empty">Could not load templates.</div>'; });
+        }).catch(function() { listEl.innerHTML = '<div class="rb-tpl-empty">' + esc(t('couldnotloadtemplates', 'Could not load templates.')) + '</div>'; });
     }
 
     function saveTemplateAs(asNew) {
         var nameEl = document.getElementById('rb-global-name');
         var name = nameEl ? nameEl.value.trim() : '';
-        if (!name) { focusNameFieldWithError('A template name is required to save.'); return; }
+        if (!name) { focusNameFieldWithError(t('errornametemplaterequired', 'A template name is required to save.')); return; }
         if (!asNew && !state.loadedTemplateId) {
             // Shouldn't happen since the button is disabled in this case, but guard anyway.
-            alert('No template is currently loaded to update. Use "Save as new template" instead.');
+            alert(t('errornotemplateloaded', 'No template is currently loaded to update. Use "Save as new template" instead.'));
             return;
         }
         // Sync whichever mode is active — also sync the other to preserve edits
@@ -707,21 +721,21 @@
         var payload = {action: 'save', name: name, mode: state.mode, templatedata: templatedata};
         if (!asNew) payload.id = state.loadedTemplateId;
         apiRequest(payload).then(function(data) {
-            if (data.error) { alert('Error: ' + data.error); return; }
+            if (data.error) { alert(ta('errorprefix', data.error, 'Error: {$a}')); return; }
             // Whether we created a new row or updated an existing one, treat
             // the result as "now loaded" so a further click of Update saves
             // back to the same place instead of creating another duplicate.
             state.loadedTemplateId = data.id;
             state.loadedTemplateName = name;
             updateEditingIndicator();
-            alert(asNew ? 'Template "' + name + '" saved!' : 'Template "' + name + '" updated!');
+            alert(asNew ? ta('templatesaved', name, 'Template "{$a}" saved!') : ta('templateupdated', name, 'Template "{$a}" updated!'));
             loadTemplateList();
         });
     }
 
     function loadTemplate(id) {
         apiRequest({action: 'get', id: id}).then(function(data) {
-            if (data.error) { alert('Error: ' + data.error); return; }
+            if (data.error) { alert(ta('errorprefix', data.error, 'Error: {$a}')); return; }
             state.mode = data.mode;
             if (data.templatedata.rows)   state.rows   = data.templatedata.rows;
             if (data.templatedata.mgRows) state.mgRows = data.templatedata.mgRows;
@@ -738,9 +752,9 @@
     }
 
     function deleteTemplate(id) {
-        if (!confirm('Delete this template?')) return;
+        if (!confirm(t('confirmdeletetemplate', 'Delete this template?'))) return;
         apiRequest({action: 'delete', id: id}).then(function(data) {
-            if (data.error) { alert('Error: ' + data.error); return; }
+            if (data.error) { alert(ta('errorprefix', data.error, 'Error: {$a}')); return; }
             if (state.loadedTemplateId === id) {
                 // The template currently loaded into the editor was just
                 // deleted — stop treating it as "loaded" so Update doesn't
@@ -860,7 +874,7 @@
 
             var btn = document.createElement('button');
             btn.type = 'button';
-            btn.innerHTML = '&#128203; Rubric Builder';
+            btn.innerHTML = '&#128203; ' + esc(t('modaltitle', 'Rubric Builder'));
             btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:#1a56db;color:#fff;border:none;border-radius:5px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;box-shadow:0 1px 4px rgba(0,0,0,.18);';
             btn.addEventListener('mouseenter', function() { this.style.background='#1e40af'; });
             btn.addEventListener('mouseleave', function() { this.style.background='#1a56db'; });
@@ -868,12 +882,12 @@
 
             var clearBtn = document.createElement('button');
             clearBtn.type = 'button';
-            clearBtn.innerHTML = '&#10005; Clear editor';
+            clearBtn.innerHTML = '&#10005; ' + esc(t('cleareditorbtn', 'Clear editor'));
             clearBtn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:#fff;color:#6b7280;border:1px solid #d1d5db;border-radius:5px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:inherit;';
             clearBtn.addEventListener('mouseenter', function() { this.style.background='#fee2e2';this.style.color='#dc2626';this.style.borderColor='#fca5a5'; });
             clearBtn.addEventListener('mouseleave', function() { this.style.background='#fff';this.style.color='#6b7280';this.style.borderColor='#d1d5db'; });
             clearBtn.addEventListener('click', function() {
-                if (!confirm('Clear the editor content?')) return;
+                if (!confirm(t('confirmcleareditor', 'Clear the editor content?'))) return;
                 editor.setContent('');
                 editor.fire('change');
                 var ta = document.getElementById(editor.id);
@@ -896,8 +910,8 @@
                 tinymce._rb_registered = true;
                 tinymce.PluginManager.add('rubricbuilder', function(editor) {
                     editor.ui.registry.addButton('rubricbuilder', {
-                        text: '📋 Rubric Builder',
-                        tooltip: 'Build a rubric or marking guide',
+                        text: '📋 ' + t('modaltitle', 'Rubric Builder'),
+                        tooltip: t('toolbartooltip', 'Build a rubric or marking guide'),
                         onAction: function() { openBuilder(editor); }
                     });
                     return {};
@@ -1023,24 +1037,24 @@
 
         var btn = document.createElement('button');
         btn.type = 'button';
-        btn.innerHTML = '&#128203; Rubric Builder';
+        btn.innerHTML = '&#128203; ' + esc(t('modaltitle', 'Rubric Builder'));
         btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:#1a56db;color:#fff;border:none;border-radius:5px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;box-shadow:0 1px 4px rgba(0,0,0,.18);';
         btn.addEventListener('mouseenter', function() { this.style.background='#1e40af'; });
         btn.addEventListener('mouseleave', function() { this.style.background='#1a56db'; });
         btn.addEventListener('click', function() {
             var ed = resolveEditor();
             if (ed) openBuilder(ed);
-            else alert('Editor not ready yet — please wait a moment and try again.');
+            else alert(t('editornotready', 'Editor not ready yet — please wait a moment and try again.'));
         });
 
         var clearBtn = document.createElement('button');
         clearBtn.type = 'button';
-        clearBtn.innerHTML = '&#10005; Clear editor';
+        clearBtn.innerHTML = '&#10005; ' + esc(t('cleareditorbtn', 'Clear editor'));
         clearBtn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:#fff;color:#6b7280;border:1px solid #d1d5db;border-radius:5px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:inherit;';
         clearBtn.addEventListener('mouseenter', function() { this.style.background='#fee2e2';this.style.color='#dc2626';this.style.borderColor='#fca5a5'; });
         clearBtn.addEventListener('mouseleave', function() { this.style.background='#fff';this.style.color='#6b7280';this.style.borderColor='#d1d5db'; });
         clearBtn.addEventListener('click', function() {
-            if (!confirm('Clear the editor content?')) return;
+            if (!confirm(t('confirmcleareditor', 'Clear the editor content?'))) return;
             var ed = resolveEditor();
             if (ed) { ed.setContent(''); ed.fire && ed.fire('change'); }
             var ta = document.getElementById(editorId);

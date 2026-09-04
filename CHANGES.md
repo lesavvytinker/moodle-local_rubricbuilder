@@ -1,5 +1,9 @@
 # Changelog — local_rubricbuilder
 
+## 0.9 (2026-09-04)
+
+- Externalized every user-facing string (button labels, alerts, confirmations, placeholders, hints, table headers — over 60 in total) into `lang/en/local_rubricbuilder.php`, per the Moodle Marketplace guideline against hardcoded text. PHP-side error messages in `template.php` now use `get_string()` directly; JS-side UI strings are resolved via `get_string()` in `lib.php` and passed to `rubric-builder.js` as a single `window.RB_STRINGS` object (with hardcoded English fallbacks retained only as a defensive measure if that object somehow fails to load). Internal developer console logging was deliberately left untouched, since it's never seen by end users.
+
 ## 0.8 (2026-09-04)
 
 - `template.php` now checks the plugin's own `local/rubricbuilder:managetemplates` capability instead of the generic `moodle/course:manageactivities`, so a site admin can actually customise who gets template access without it being a dead/unused declaration.

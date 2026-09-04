@@ -73,7 +73,7 @@ if (!has_capability('local/rubricbuilder:managetemplates', $context) &&
     $allowed = (bool) get_user_capability_course('local/rubricbuilder:managetemplates', null, false, 'id', null, 0);
     if (!$allowed) {
         http_response_code(403);
-        echo json_encode(['error' => 'Permission denied']);
+        echo json_encode(['error' => get_string('error_permissiondenied', 'local_rubricbuilder')]);
         exit;
     }
 }
@@ -113,7 +113,7 @@ switch ($action) {
         $id = required_param('id', PARAM_INT);
         $template = $DB->get_record('local_rubricbuilder_templates', ['id' => $id]);
         if (!$template) {
-            echo json_encode(['error' => 'Template not found']);
+            echo json_encode(['error' => get_string('error_templatenotfound', 'local_rubricbuilder')]);
             break;
         }
         echo json_encode([
@@ -137,7 +137,7 @@ switch ($action) {
         // Validate JSON
         $decoded = json_decode($templatedata);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            echo json_encode(['error' => 'Invalid template data']);
+            echo json_encode(['error' => get_string('error_invalidtemplatedata', 'local_rubricbuilder')]);
             break;
         }
 
@@ -147,11 +147,11 @@ switch ($action) {
             // Update existing — only owner or admin can update
             $existing = $DB->get_record('local_rubricbuilder_templates', ['id' => $id]);
             if (!$existing) {
-                echo json_encode(['error' => 'Template not found']);
+                echo json_encode(['error' => get_string('error_templatenotfound', 'local_rubricbuilder')]);
                 break;
             }
             if ($existing->createdby != $USER->id && !is_siteadmin()) {
-                echo json_encode(['error' => 'You can only edit your own templates']);
+                echo json_encode(['error' => get_string('error_notyourtemplate_edit', 'local_rubricbuilder')]);
                 break;
             }
             $record = new stdClass();
@@ -183,12 +183,12 @@ switch ($action) {
         $id = required_param('id', PARAM_INT);
         $existing = $DB->get_record('local_rubricbuilder_templates', ['id' => $id]);
         if (!$existing) {
-            echo json_encode(['error' => 'Template not found']);
+            echo json_encode(['error' => get_string('error_templatenotfound', 'local_rubricbuilder')]);
             break;
         }
         // Only the owner or a site admin can delete
         if ($existing->createdby != $USER->id && !is_siteadmin()) {
-            echo json_encode(['error' => 'You can only delete your own templates']);
+            echo json_encode(['error' => get_string('error_notyourtemplate_delete', 'local_rubricbuilder')]);
             break;
         }
         $DB->delete_records('local_rubricbuilder_templates', ['id' => $id]);
@@ -196,6 +196,6 @@ switch ($action) {
         break;
 
     default:
-        echo json_encode(['error' => 'Unknown action']);
+        echo json_encode(['error' => get_string('error_unknownaction', 'local_rubricbuilder')]);
         break;
 }
