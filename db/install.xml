@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/rubricbuilder/db" VERSION="20260205" COMMENT="XMLDB file for local_rubricbuilder">
+  <TABLES>
+    <TABLE NAME="local_rubricbuilder_templates" COMMENT="Saved rubric/marking guide templates">
+      <FIELDS>
+        <FIELD NAME="id"          TYPE="int"  LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name"        TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Template name"/>
+        <FIELD NAME="mode"        TYPE="char" LENGTH="20"  NOTNULL="true" SEQUENCE="false" COMMENT="rubric or marking-guide"/>
+        <FIELD NAME="templatedata" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="JSON-encoded template data"/>
+        <FIELD NAME="createdby"   TYPE="int"  LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="User ID who created"/>
+        <FIELD NAME="timecreated" TYPE="int"  LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="createdby" UNIQUE="false" FIELDS="createdby"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>
