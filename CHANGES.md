@@ -1,5 +1,9 @@
 # Changelog — local_rubricbuilder
 
+## 0.11 (2026-09-08)
+
+- README: added a more prominent note on the relationship with the companion `local_rubricgrader` plugin — this plugin is fully useful standalone, but pairs with Rubric Grader for a complete build-and-grade workflow.
+
 ## 0.10 (2026-09-07)
 
 - Marking Guide: the criterion label is now bolded, and the description (when present) always appears on its own line beneath the label, rather than running on immediately after it.

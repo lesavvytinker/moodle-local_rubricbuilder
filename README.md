@@ -2,6 +2,8 @@
 
 A local plugin that adds a **Rubric Builder** button to the "Information for graders" editor on quiz question editing pages, allowing teachers to visually build rubrics and marking guides without writing HTML by hand.
 
+> **Pairs naturally with [Rubric Grader](https://github.com/lesavvytinker/moodle-local_rubricgrader)** for a complete build-and-grade workflow — but this plugin is fully useful on its own. The rubric it generates is a clear, readable reference for any grader, whether or not Rubric Grader is installed; Rubric Grader simply adds one-click, automated grading and student feedback on top of it.
+
 ## Features
 
 - **Rubric mode** — build a scored-cell rubric where each cell has its own point value and description. Works for any combination of per-criterion marks (e.g. one criterion worth 6, another worth 2).
@@ -15,7 +17,7 @@ A local plugin that adds a **Rubric Builder** button to the "Information for gra
 
 - Moodle 4.5 or higher
 - PHP 7.4 or higher
-- The `local_rubricgrader` plugin is recommended alongside this plugin for a complete grading workflow, but is not required.
+- The `local_rubricgrader` plugin is recommended alongside this plugin — it's what turns the rubric this plugin builds into a one-click, automated grading experience with automatic student feedback. Not required to use this plugin, but you'll be grading manually without it.
 
 ## Installation
 
