@@ -69,7 +69,8 @@
         html += '  <thead><tr>\n    <th style="text-align:left;">Criteria</th>\n    <th>Max Marks</th>\n    <th>Score</th>\n  </tr></thead>\n  <tbody>\n';
         rows.forEach(function(row) {
             html += '    <tr class="rs-criterion-row">\n';
-            html += '      <td class="rs-criterion-label-cell"><span class="rs-criterion-label">' + esc(row.label) + '</span><span class="rs-criterion-desc">' + escNL(row.desc) + '</span></td>\n';
+            var descHtml = row.desc ? '<br><span class="rs-criterion-desc">' + escNL(row.desc) + '</span>' : '<span class="rs-criterion-desc"></span>';
+            html += '      <td class="rs-criterion-label-cell"><strong class="rs-criterion-label">' + esc(row.label) + '</strong>' + descHtml + '</td>\n';
             html += '      <td class="rs-max-cell"><label>Max</label> <input class="rs-max-input" min="0" step="0.1" type="number" value="' + esc(row.max) + '"></td>\n';
             html += '      <td class="rs-score-cell"><label>Score</label> <input class="rs-score-input" min="0" step="0.1" type="number" placeholder="0.0"> <span class="rs-confirm-btn">Confirm</span></td>\n';
             html += '    </tr>\n';

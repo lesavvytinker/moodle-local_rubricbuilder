@@ -1,5 +1,9 @@
 # Changelog — local_rubricbuilder
 
+## 0.10 (2026-09-07)
+
+- Marking Guide: the criterion label is now bolded, and the description (when present) always appears on its own line beneath the label, rather than running on immediately after it.
+
 ## 0.9 (2026-09-04)
 
 - Externalized every user-facing string (button labels, alerts, confirmations, placeholders, hints, table headers — over 60 in total) into `lang/en/local_rubricbuilder.php`, per the Moodle Marketplace guideline against hardcoded text. PHP-side error messages in `template.php` now use `get_string()` directly; JS-side UI strings are resolved via `get_string()` in `lib.php` and passed to `rubric-builder.js` as a single `window.RB_STRINGS` object (with hardcoded English fallbacks retained only as a defensive measure if that object somehow fails to load). Internal developer console logging was deliberately left untouched, since it's never seen by end users.
