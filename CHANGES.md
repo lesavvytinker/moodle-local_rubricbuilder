@@ -1,5 +1,13 @@
 # Changelog — local_rubricbuilder
 
+## 0.13 (2026-09-08)
+
+- Reworked Checklist mode's generated output: removed the free-text score input and per-item remark field. Each item now has a single clickable "Achieved" cell carrying its full point value — click it on the grading side to award full marks, no partial credit. Simplifies the table to two columns (Item, Achieved) instead of four.
+
+## 0.12 (2026-09-08)
+
+- Added a third grading mode: **Checklist**. Group items into named sections, each item worth its own partial-credit score, with the ability to include a remark per item once graded. Works alongside Rubric and Marking Guide with the same Templates system (save, load, edit, update), live "Max possible" badge, and Save-as-Template-&-Insert flow. Checklist tables use fully namespaced `rgdr-cl-*` classes throughout — since this is a brand-new mode, there's no existing content to stay backward-compatible with, unlike the dual rs-/rgdr- classing Rubric and Marking Guide carry for that reason.
+
 ## 0.11 (2026-09-08)
 
 - README: added a more prominent note on the relationship with the companion `local_rubricgrader` plugin — this plugin is fully useful standalone, but pairs with Rubric Grader for a complete build-and-grade workflow.

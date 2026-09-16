@@ -79,6 +79,48 @@
         return html;
     }
 
+    // Checklist mode is new — unlike Rubric/Marking Guide it has no content
+    // already saved anywhere, so its classes use the rgdr- namespace
+    // exclusively rather than needing the rs-/rgdr- dual-classing those
+    // older modes carry for backward compatibility. rs-table is kept on the
+    // root purely because local_rubricgrader's existing table-detection
+    // selectors already look for it everywhere; rgdr-table/rgdr-checklist
+    // are the properly namespaced markers actually used for mode detection.
+    // Checklist mode is new — unlike Rubric/Marking Guide it has no content
+    // already saved anywhere, so its classes use the rgdr- namespace
+    // exclusively rather than needing the rs-/rgdr- dual-classing those
+    // older modes carry for backward compatibility. rs-table is kept on the
+    // root purely because local_rubricgrader's existing table-detection
+    // selectors already look for it everywhere; rgdr-table/rgdr-checklist
+    // are the properly namespaced markers actually used for mode detection.
+    //
+    // Each item has exactly one clickable "Achieved" cell carrying the
+    // item's full max score as data-score — click it and the grader awards
+    // the item's full points, same click-a-value interaction as Rubric
+    // mode's cells. No partial credit, no free-text score entry, no remark
+    // field: an item is either achieved (full marks) or it isn't (zero).
+    function generateChecklistHTML(data) {
+        var sections = data.sections;
+        var total = 0;
+        sections.forEach(function(sec) {
+            sec.items.forEach(function(item) { total += parseFloat(item.max) || 0; });
+        });
+        var html = '<table class="rs-table rgdr-table rgdr-checklist" style="border-collapse:collapse;width:100%;" border="1" cellpadding="10">\n';
+        html += '  <thead><tr>\n    <th style="text-align:left;">Item</th>\n    <th>Achieved</th>\n  </tr></thead>\n  <tbody>\n';
+        sections.forEach(function(sec) {
+            html += '    <tr class="rgdr-cl-section-row"><td colspan="2" class="rgdr-cl-section-label"><strong>' + esc(sec.label) + '</strong></td></tr>\n';
+            sec.items.forEach(function(item) {
+                html += '    <tr class="rgdr-cl-item-row">\n';
+                var descHtml = item.desc ? '<br><span class="rgdr-cl-item-desc">' + escNL(item.desc) + '</span>' : '<span class="rgdr-cl-item-desc"></span>';
+                html += '      <td class="rgdr-cl-item-label-cell"><strong class="rgdr-cl-item-label">' + esc(item.label) + '</strong>' + descHtml + '</td>\n';
+                html += '      <td class="rgdr-cl-item-cell" data-score="' + esc(item.max) + '">' + esc(item.max) + '</td>\n';
+                html += '    </tr>\n';
+            });
+        });
+        html += '  </tbody>\n  <tfoot><tr class="rgdr-cl-total-row"><td class="rgdr-cl-total-label">Total</td><td class="rgdr-cl-total-value">0.0 / ' + total + '.0</td></tr></tfoot>\n</table>';
+        return html;
+    }
+
     // -------------------------------------------------------------------------
     // Modal
     // -------------------------------------------------------------------------
@@ -143,6 +185,7 @@
             '  <div id="rb-tabs">',
             '    <button class="rb-tab rb-tab-active" data-mode="rubric">' + esc(t('tabrubric', 'Rubric')) + '</button>',
             '    <button class="rb-tab" data-mode="marking-guide">' + esc(t('tabmarkingguide', 'Marking Guide')) + '</button>',
+            '    <button class="rb-tab" data-mode="checklist">' + esc(t('tabchecklist', 'Checklist')) + '</button>',
             '    <button class="rb-tab rb-tab-right" data-mode="templates">&#128190; ' + esc(t('tabtemplates', 'Templates')) + '</button>',
             '  </div>',
 
@@ -176,6 +219,17 @@
             '    </table>',
             '  </div>',
 
+            '  <!-- CHECKLIST PANEL -->',
+            '  <div id="rb-checklist-panel" class="rb-panel" style="display:none;">',
+            '    <div class="rb-section-title">',
+            '      ' + esc(t('checklistsections', 'Checklist sections')),
+            '      <button class="rb-small-btn" id="rb-cl-add-section">' + esc(t('addsection', '+ Add section')) + '</button>',
+            '      <span class="rb-hint">' + esc(t('checklisthint', 'Group items into sections. Each item can be worth partial credit and take a remark once graded.')) + '</span>',
+            '      <span class="rb-max-badge" id="rb-checklist-max-badge">' + esc(t('maxpossible', 'Max possible:')) + ' <strong id="rb-checklist-max-value">0</strong></span>',
+            '    </div>',
+            '    <div id="rb-checklist-body"></div>',
+            '  </div>',
+
             '  <!-- TEMPLATES PANEL -->',
             '  <div id="rb-templates-panel" class="rb-panel" style="display:none;">',
             '    <div class="rb-tpl-toolbar">',
@@ -207,11 +261,12 @@
     // State
     // rows: [{label, cols:[{score, desc}]}]
     // mgRows: [{label, desc, max}]
+    // checklistSections: [{label, items: [{label, desc, max}]}]
     // loadedTemplateId/loadedTemplateName: set when a saved template has been
     // loaded into the editor, so "Update loaded template" knows what to
     // overwrite instead of always creating a new row.
     // -------------------------------------------------------------------------
-    var state = { mode: 'rubric', rows: [], mgRows: [], loadedTemplateId: null, loadedTemplateName: '' };
+    var state = { mode: 'rubric', rows: [], mgRows: [], checklistSections: [], loadedTemplateId: null, loadedTemplateName: '' };
 
     function resetState() {
         state.mode = 'rubric';
@@ -219,6 +274,9 @@
             {label: 'Criterion 1', cols: [{score:'10',desc:''},{score:'8',desc:''},{score:'6',desc:''},{score:'4',desc:''},{score:'2',desc:''},{score:'0',desc:''}]},
         ];
         state.mgRows = [{label: 'Criterion 1', desc: '', max: '5'}];
+        state.checklistSections = [
+            {label: 'Section 1', items: [{label: 'Item 1', desc: '', max: '2'}]},
+        ];
         state.loadedTemplateId = null;
         state.loadedTemplateName = '';
     }
@@ -291,6 +349,31 @@
         });
     }
 
+    function syncChecklist() {
+        document.querySelectorAll('.rb-cl-section-label').forEach(function(inp) {
+            var si = +inp.getAttribute('data-si');
+            if (state.checklistSections[si]) state.checklistSections[si].label = inp.value;
+        });
+        document.querySelectorAll('.rb-cl-item-label').forEach(function(inp) {
+            var si = +inp.getAttribute('data-si'), ii = +inp.getAttribute('data-ii');
+            if (state.checklistSections[si] && state.checklistSections[si].items[ii]) {
+                state.checklistSections[si].items[ii].label = inp.value;
+            }
+        });
+        document.querySelectorAll('.rb-cl-item-desc').forEach(function(ta) {
+            var si = +ta.getAttribute('data-si'), ii = +ta.getAttribute('data-ii');
+            if (state.checklistSections[si] && state.checklistSections[si].items[ii]) {
+                state.checklistSections[si].items[ii].desc = ta.value;
+            }
+        });
+        document.querySelectorAll('.rb-cl-item-max').forEach(function(inp) {
+            var si = +inp.getAttribute('data-si'), ii = +inp.getAttribute('data-ii');
+            if (state.checklistSections[si] && state.checklistSections[si].items[ii]) {
+                state.checklistSections[si].items[ii].max = inp.value;
+            }
+        });
+    }
+
     // -------------------------------------------------------------------------
     // Render
     // -------------------------------------------------------------------------
@@ -325,6 +408,18 @@
         return max;
     }
 
+    // Checklist mode: every item's max counts toward the total — unlike
+    // Rubric mode, a marker can partially or fully award each item
+    // independently rather than picking one cell per row.
+    function computeChecklistMaxFromDOM() {
+        var max = 0;
+        document.querySelectorAll('.rb-cl-item-max').forEach(function(inp) {
+            var v = parseFloat(inp.value);
+            if (!isNaN(v)) max += v;
+        });
+        return max;
+    }
+
     function updateRubricMaxBadge() {
         var el = document.getElementById('rb-rubric-max-value');
         if (el) el.textContent = computeRubricMaxFromDOM();
@@ -333,6 +428,11 @@
     function updateMGMaxBadge() {
         var el = document.getElementById('rb-mg-max-value');
         if (el) el.textContent = computeMGMaxFromDOM();
+    }
+
+    function updateChecklistMaxBadge() {
+        var el = document.getElementById('rb-checklist-max-value');
+        if (el) el.textContent = computeChecklistMaxFromDOM();
     }
 
     function renderRows() {
@@ -391,6 +491,39 @@
         updateMGMaxBadge();
     }
 
+    function renderChecklist() {
+        var container = document.getElementById('rb-checklist-body');
+        if (!container) return;
+        container.innerHTML = '';
+        state.checklistSections.forEach(function(section, si) {
+            var div = document.createElement('div');
+            div.className = 'rb-cl-section-block';
+            div.setAttribute('data-si', si);
+
+            var header = '<div class="rb-cl-section-header">';
+            header += '<input class="rb-cl-section-label rb-input" type="text" value="' + esc(section.label) + '" data-si="' + si + '" placeholder="' + esc(t('sectionlabelplaceholder', 'Section label')) + '">';
+            header += '<button class="rb-small-btn rb-cl-add-item" data-si="' + si + '">' + esc(t('additem', '+ Add item')) + '</button>';
+            header += '<button class="rb-copy-btn rb-cl-copy-section" data-si="' + si + '">&#10063; ' + esc(t('copybtn', 'Copy')) + '</button>';
+            header += '<button class="rb-del-btn rb-cl-del-section" data-si="' + si + '">&times; ' + esc(t('removebtn', 'Remove')) + '</button>';
+            header += '</div>';
+
+            var items = '<div class="rb-cl-items-body">';
+            section.items.forEach(function(item, ii) {
+                items += '<div class="rb-cl-item-row" data-si="' + si + '" data-ii="' + ii + '">';
+                items += '<input class="rb-cl-item-label rb-input" type="text" value="' + esc(item.label) + '" data-si="' + si + '" data-ii="' + ii + '" placeholder="' + esc(t('itemlabelplaceholder', 'Item label')) + '">';
+                items += '<input class="rb-cl-item-max rb-input rb-input-sm" type="number" value="' + esc(item.max) + '" data-si="' + si + '" data-ii="' + ii + '" min="0" step="0.5" placeholder="' + esc(t('maxlabel', 'Max')) + '">';
+                items += '<textarea class="rb-cl-item-desc rb-input" rows="2" data-si="' + si + '" data-ii="' + ii + '" placeholder="' + esc(t('itemdescplaceholder', 'Optional description...')) + '">' + esc(item.desc) + '</textarea>';
+                items += '<button class="rb-del-btn rb-cl-del-item" data-si="' + si + '" data-ii="' + ii + '">&times;</button>';
+                items += '</div>';
+            });
+            items += '</div>';
+
+            div.innerHTML = header + items;
+            container.appendChild(div);
+        });
+        updateChecklistMaxBadge();
+    }
+
     // -------------------------------------------------------------------------
     // Drag to reorder
     // -------------------------------------------------------------------------
@@ -436,25 +569,29 @@
         if (mode !== 'templates') state.mode = mode;
         var rubricPanel = document.getElementById('rb-rubric-panel');
         var mgPanel     = document.getElementById('rb-mg-panel');
+        var clPanel     = document.getElementById('rb-checklist-panel');
         var tplPanel    = document.getElementById('rb-templates-panel');
         var insertBtn   = document.getElementById('rb-insert');
         var saveInsertBtn = document.getElementById('rb-save-insert');
         rubricPanel.style.display = mode === 'rubric' ? '' : 'none';
         mgPanel.style.display     = mode === 'marking-guide' ? '' : 'none';
+        clPanel.style.display     = mode === 'checklist' ? '' : 'none';
         tplPanel.style.display    = mode === 'templates' ? '' : 'none';
         insertBtn.style.display   = mode === 'templates' ? 'none' : '';
         if (saveInsertBtn) saveInsertBtn.style.display = mode === 'templates' ? 'none' : '';
         if (mode === 'rubric') renderRows();
         else if (mode === 'marking-guide') renderMGRows();
+        else if (mode === 'checklist') renderChecklist();
         else if (mode === 'templates') { loadTemplateList(); updateEditingIndicator(); }
     }
 
     // -------------------------------------------------------------------------
     // Wire events
     // -------------------------------------------------------------------------
-    // Generates HTML from whichever mode (rubric/marking-guide) is currently
-    // active, syncing the live form fields into state first. Shared by both
-    // the plain "Insert into editor" button and "Save as Template & Insert".
+    // Generates HTML from whichever mode (rubric/marking-guide/checklist) is
+    // currently active, syncing the live form fields into state first.
+    // Shared by both the plain "Insert into editor" button and "Save as
+    // Template & Insert".
     function generateCurrentHtml() {
         if (state.mode === 'rubric') {
             syncRows();
@@ -462,6 +599,9 @@
         } else if (state.mode === 'marking-guide') {
             syncMGRows();
             return generateMarkingGuideHTML({rows: state.mgRows});
+        } else if (state.mode === 'checklist') {
+            syncChecklist();
+            return generateChecklistHTML({sections: state.checklistSections});
         }
         return '';
     }
@@ -506,6 +646,13 @@
             renderMGRows();
         });
 
+        // Add checklist section
+        document.getElementById('rb-cl-add-section').addEventListener('click', function() {
+            syncChecklist();
+            state.checklistSections.push({label: 'Section ' + (state.checklistSections.length + 1), items: [{label: 'Item 1', desc: '', max: '2'}]});
+            renderChecklist();
+        });
+
         // Delegated clicks
         modal.addEventListener('click', function(e) {
             var t = e.target;
@@ -547,6 +694,37 @@
                 state.mgRows.splice(+t.getAttribute('data-ri'), 1);
                 renderMGRows();
             }
+            // Add item to a checklist section
+            if (t.classList.contains('rb-cl-add-item')) {
+                syncChecklist();
+                var si = +t.getAttribute('data-si');
+                state.checklistSections[si].items.push({label: 'Item ' + (state.checklistSections[si].items.length + 1), desc: '', max: '2'});
+                renderChecklist();
+            }
+            // Delete checklist item
+            if (t.classList.contains('rb-cl-del-item')) {
+                syncChecklist();
+                var dsi = +t.getAttribute('data-si'), dii = +t.getAttribute('data-ii');
+                state.checklistSections[dsi].items.splice(dii, 1);
+                renderChecklist();
+            }
+            // Copy checklist section (with all its items)
+            if (t.classList.contains('rb-cl-copy-section')) {
+                syncChecklist();
+                var csi = +t.getAttribute('data-si');
+                var origSection = state.checklistSections[csi];
+                state.checklistSections.splice(csi + 1, 0, {
+                    label: origSection.label + ' (copy)',
+                    items: origSection.items.map(function(it) { return {label: it.label, desc: it.desc, max: it.max}; })
+                });
+                renderChecklist();
+            }
+            // Delete checklist section
+            if (t.classList.contains('rb-cl-del-section')) {
+                syncChecklist();
+                state.checklistSections.splice(+t.getAttribute('data-si'), 1);
+                renderChecklist();
+            }
         });
 
         // Prevent scroll wheel on number inputs
@@ -558,6 +736,7 @@
         modal.addEventListener('input', function(e) {
             if (e.target.classList.contains('rb-col-score')) updateRubricMaxBadge();
             if (e.target.classList.contains('rb-mg-max')) updateMGMaxBadge();
+            if (e.target.classList.contains('rb-cl-item-max')) updateChecklistMaxBadge();
             if (e.target.id === 'rb-global-name') {
                 e.target.classList.remove('rb-input-error');
                 var hint = document.getElementById('rb-name-bar-hint');
@@ -695,7 +874,7 @@
             if (!data.templates || !data.templates.length) { listEl.innerHTML = '<div class="rb-tpl-empty">' + esc(t('notemplatessaved', 'No templates saved yet.')) + '</div>'; return; }
             var html = '<table class="rb-tpl-table"><thead><tr><th>' + esc(t('colname', 'Name')) + '</th><th>' + esc(t('coltype', 'Type')) + '</th><th>' + esc(t('colsavedby', 'Saved by')) + '</th><th>' + esc(t('coldate', 'Date')) + '</th><th></th></tr></thead><tbody>';
             data.templates.forEach(function(t2) {
-                var modeLabel = t2.mode === 'marking-guide' ? t('tabmarkingguide', 'Marking Guide') : t('tabrubric', 'Rubric');
+                var modeLabel = t2.mode === 'marking-guide' ? t('tabmarkingguide', 'Marking Guide') : (t2.mode === 'checklist' ? t('tabchecklist', 'Checklist') : t('tabrubric', 'Rubric'));
                 html += '<tr><td><strong>' + esc(t2.name) + '</strong></td>';
                 html += '<td><span class="rb-tpl-badge rb-tpl-badge-' + esc(t2.mode) + '">' + esc(modeLabel) + '</span></td>';
                 html += '<td>' + esc(t2.createdbyname) + '</td><td>' + new Date(t2.timemodified*1000).toLocaleDateString() + '</td>';
@@ -715,10 +894,11 @@
             alert(t('errornotemplateloaded', 'No template is currently loaded to update. Use "Save as new template" instead.'));
             return;
         }
-        // Sync whichever mode is active — also sync the other to preserve edits
+        // Sync whichever mode is active — also sync the others to preserve edits
         syncRows();
         syncMGRows();
-        var templatedata = JSON.stringify({rows: state.rows, mgRows: state.mgRows});
+        syncChecklist();
+        var templatedata = JSON.stringify({rows: state.rows, mgRows: state.mgRows, checklistSections: state.checklistSections});
         var payload = {action: 'save', name: name, mode: state.mode, templatedata: templatedata};
         if (!asNew) payload.id = state.loadedTemplateId;
         apiRequest(payload).then(function(data) {
@@ -740,6 +920,7 @@
             state.mode = data.mode;
             if (data.templatedata.rows)   state.rows   = data.templatedata.rows;
             if (data.templatedata.mgRows) state.mgRows = data.templatedata.mgRows;
+            if (data.templatedata.checklistSections) state.checklistSections = data.templatedata.checklistSections;
             state.loadedTemplateId = data.id;
             state.loadedTemplateName = data.name;
             var nameEl = document.getElementById('rb-global-name');
@@ -824,6 +1005,15 @@
             '#rb-mg-table{width:100%;border-collapse:collapse;}',
             '#rb-mg-table th{text-align:left;padding:8px 10px;background:#f3f4f6;font-size:12px;color:#6b7280;border-bottom:1px solid #e5e7eb;}',
             '#rb-mg-table td{padding:6px 10px;border-bottom:1px solid #f3f4f6;vertical-align:top;}',
+            /* Checklist */
+            '.rb-cl-section-block{border:1px solid #e5e7eb;border-radius:6px;margin-bottom:14px;overflow:hidden;}',
+            '.rb-cl-section-header{background:#fffbeb;padding:8px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;}',
+            '.rb-cl-section-header .rb-input{flex:1;min-width:160px;font-weight:600;}',
+            '.rb-cl-items-body{padding:10px 12px;display:flex;flex-direction:column;gap:8px;}',
+            '.rb-cl-item-row{display:flex;align-items:flex-start;gap:8px;border:1px solid #f3f4f6;border-radius:4px;padding:8px;background:#fafafa;flex-wrap:wrap;}',
+            '.rb-cl-item-row .rb-cl-item-label{flex:2;min-width:140px;}',
+            '.rb-cl-item-row .rb-cl-item-max{flex:0 0 70px;}',
+            '.rb-cl-item-row .rb-cl-item-desc{flex:3;min-width:160px;font-size:12px;resize:vertical;font-family:inherit;border:1px solid #d1d5db;border-radius:4px;padding:4px 6px;box-sizing:border-box;}',
             /* Footer */
             '#rb-footer{padding:12px 18px;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:10px;background:#f8fafc;border-radius:0 0 8px 8px;flex-shrink:0;}',
             '#rb-cancel{background:#fff;border:1px solid #d1d5db;color:#374151;border-radius:5px;padding:8px 18px;cursor:pointer;font-size:14px;}',
@@ -850,6 +1040,7 @@
             '.rb-tpl-badge{display:inline-block;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:600;}',
             '.rb-tpl-badge-rubric{background:#dbeafe;color:#1d4ed8;}',
             '.rb-tpl-badge-marking-guide{background:#d1fae5;color:#065f46;}',
+            '.rb-tpl-badge-checklist{background:#fef3c7;color:#92400e;}',
             '.rb-tpl-actions{display:flex;gap:6px;}'
         ].join('\n');
         document.head.appendChild(s);

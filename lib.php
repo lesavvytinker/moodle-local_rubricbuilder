@@ -81,6 +81,7 @@ function local_rubricbuilder_before_http_headers(): void {
             'tabrubric'               => get_string('js_tabrubric', 'local_rubricbuilder'),
             'tabmarkingguide'         => get_string('js_tabmarkingguide', 'local_rubricbuilder'),
             'tabtemplates'            => get_string('js_tabtemplates', 'local_rubricbuilder'),
+            'tabchecklist'            => get_string('js_tabchecklist', 'local_rubricbuilder'),
             'templatenamelabel'       => get_string('js_templatenamelabel', 'local_rubricbuilder'),
             'templatenameplaceholder' => get_string('js_templatenameplaceholder', 'local_rubricbuilder'),
             'templatenamehint'        => get_string('js_templatenamehint', 'local_rubricbuilder'),
@@ -133,6 +134,14 @@ function local_rubricbuilder_before_http_headers(): void {
             'celldescplaceholder'     => get_string('js_celldescplaceholder', 'local_rubricbuilder'),
             'cleareditorbtn'          => get_string('js_cleareditorbtn', 'local_rubricbuilder'),
             'toolbartooltip'          => get_string('js_toolbartooltip', 'local_rubricbuilder'),
+            'checklistsections'       => get_string('js_checklistsections', 'local_rubricbuilder'),
+            'addsection'              => get_string('js_addsection', 'local_rubricbuilder'),
+            'checklisthint'           => get_string('js_checklisthint', 'local_rubricbuilder'),
+            'sectionlabelplaceholder' => get_string('js_sectionlabelplaceholder', 'local_rubricbuilder'),
+            'additem'                 => get_string('js_additem', 'local_rubricbuilder'),
+            'itemlabelplaceholder'    => get_string('js_itemlabelplaceholder', 'local_rubricbuilder'),
+            'maxlabel'                => get_string('js_maxlabel', 'local_rubricbuilder'),
+            'itemdescplaceholder'     => get_string('js_itemdescplaceholder', 'local_rubricbuilder'),
         ];
         // Strings containing a {$a} placeholder are resolved above with a
         // literal '__A__' marker (since the real value isn't known until

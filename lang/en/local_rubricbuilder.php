@@ -42,6 +42,7 @@ $string['js_close']                   = 'Close';
 $string['js_tabrubric']               = 'Rubric';
 $string['js_tabmarkingguide']         = 'Marking Guide';
 $string['js_tabtemplates']            = 'Templates';
+$string['js_tabchecklist']            = 'Checklist';
 $string['js_templatenamelabel']       = 'Template name';
 $string['js_templatenameplaceholder'] = 'e.g. Describe Image — General Rubric';
 $string['js_templatenamehint']        = 'Only needed if you plan to save this as a reusable template.';
@@ -94,6 +95,14 @@ $string['js_removebtn']               = 'Remove';
 $string['js_celldescplaceholder']     = 'Cell description...';
 $string['js_cleareditorbtn']          = 'Clear editor';
 $string['js_toolbartooltip']          = 'Build a rubric or marking guide';
+$string['js_checklistsections']       = 'Checklist sections';
+$string['js_addsection']              = '+ Add section';
+$string['js_checklisthint']           = 'Group items into sections. Each item can be worth partial credit and take a remark once graded.';
+$string['js_sectionlabelplaceholder'] = 'Section label';
+$string['js_additem']                 = '+ Add item';
+$string['js_itemlabelplaceholder']    = 'Item label';
+$string['js_maxlabel']                = 'Max';
+$string['js_itemdescplaceholder']     = 'Optional description...';
 
 // Privacy strings.
 $string['privacy:metadata:local_rubricbuilder_templates']                  = 'Rubric and marking guide templates created by teachers.';
