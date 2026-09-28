@@ -1,5 +1,9 @@
 # Changelog — local_rubricbuilder
 
+## 0.14 (2026-09-08)
+
+- Added admin settings (Site administration → Plugins → Local plugins → Rubric Builder): a colour picker for each of the three modes — Rubric, Marking Guide, Checklist. Drives the tab highlight, the "Max possible" badge, and the template-list mode badge for that mode. Independent of Rubric Grader's own colour settings of the same name, since either plugin works standalone.
+
 ## 0.13 (2026-09-08)
 
 - Reworked Checklist mode's generated output: removed the free-text score input and per-item remark field. Each item now has a single clickable "Achieved" cell carrying its full point value — click it on the grading side to award full marks, no partial credit. Simplifies the table to two columns (Item, Achieved) instead of four.

@@ -153,10 +153,22 @@ function local_rubricbuilder_before_http_headers(): void {
             }
         }
 
+        // Colour settings, one per mode — used by rubric-builder.js's
+        // injectStyles() to theme the tabs/badges instead of hardcoding a
+        // single fixed palette. get_config() returns false if a setting was
+        // never saved (fresh install before anyone's touched Site admin),
+        // so each falls back to the same default declared in settings.php.
+        $colors = [
+            'rubric'        => get_config('local_rubricbuilder', 'rubriccolor') ?: '#1a56db',
+            'markingguide'  => get_config('local_rubricbuilder', 'markingguidecolor') ?: '#059669',
+            'checklist'     => get_config('local_rubricbuilder', 'checklistcolor') ?: '#92400e',
+        ];
+
         $PAGE->requires->js_init_code(
             'window.RB_TEMPLATE_URL = ' . json_encode($pluginurl) . ';' .
             'window.RB_SESSKEY = ' . json_encode($sesskey) . ';' .
-            'window.RB_STRINGS = ' . json_encode($strings) . ';',
+            'window.RB_STRINGS = ' . json_encode($strings) . ';' .
+            'window.RB_COLORS = ' . json_encode($colors) . ';',
             true
         );
         $PAGE->requires->js(new moodle_url('/local/rubricbuilder/rubric-builder.js'), true);

@@ -28,6 +28,14 @@ defined('MOODLE_INTERNAL') || die();
 $string['pluginname']           = 'Rubric Builder';
 $string['managetemplates']      = 'Manage rubric templates';
 
+// Admin settings (colour customization per mode).
+$string['settings_rubriccolor']            = 'Rubric colour';
+$string['settings_rubriccolor_desc']       = 'The primary colour used for Rubric mode throughout the builder and grading interface. Set this to match your institution\'s branding if you like — it drives the tab highlight, the "Max possible" badge, the header row, and the selected-cell colour, so you only need to pick one shade.';
+$string['settings_markingguidecolor']      = 'Marking Guide colour';
+$string['settings_markingguidecolor_desc'] = 'The primary colour used for Marking Guide mode throughout the builder and grading interface. Drives the tab highlight, the "Max possible" badge, the header row, and the total row.';
+$string['settings_checklistcolor']         = 'Checklist colour';
+$string['settings_checklistcolor_desc']    = 'The primary colour used for Checklist mode throughout the builder and grading interface. Drives the tab highlight, the "Max possible" badge, the header row, and the achieved-item colour.';
+
 // template.php error strings.
 $string['error_permissiondenied']       = 'Permission denied';
 $string['error_templatenotfound']       = 'Template not found';

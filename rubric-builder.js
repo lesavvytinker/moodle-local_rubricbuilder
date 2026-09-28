@@ -956,7 +956,17 @@
         if (document.getElementById('rb-styles')) return;
         var s = document.createElement('style');
         s.id = 'rb-styles';
+        var colors = (typeof window.RB_COLORS !== 'undefined') ? window.RB_COLORS : {};
+        var rubricColor  = colors.rubric       || '#1a56db';
+        var mgColor      = colors.markingguide || '#059669';
+        var clColor      = colors.checklist    || '#92400e';
         s.textContent = [
+            // One colour per mode drives everything themed to that mode —
+            // tab highlight, max-possible badge, template-list badge.
+            // Lighter tints (badge backgrounds) are derived from the same
+            // variable via color-mix() rather than needing separate
+            // settings, so picking one shade per mode is enough.
+            ':root{--rb-rubric-color:' + rubricColor + ';--rb-mg-color:' + mgColor + ';--rb-cl-color:' + clColor + ';}',
             '#rb-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;}',
             '#rb-modal{background:#fff;border-radius:8px;width:92vw;max-width:1100px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.35);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:14px;}',
             '#rb-header{background:#1a56db;color:#fff;padding:14px 18px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}',
@@ -965,7 +975,9 @@
             '#rb-tabs{display:flex;border-bottom:2px solid #e5e7eb;background:#f8fafc;padding:0 18px;flex-shrink:0;}',
             '.rb-tab{background:none;border:none;padding:10px 18px;cursor:pointer;font-size:14px;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;}',
             '.rb-tab:hover{color:#1a56db;}',
-            '.rb-tab-active{color:#1a56db!important;font-weight:600;border-bottom-color:#1a56db!important;}',
+            '.rb-tab[data-mode="rubric"].rb-tab-active{color:var(--rb-rubric-color)!important;font-weight:600;border-bottom-color:var(--rb-rubric-color)!important;}',
+            '.rb-tab[data-mode="marking-guide"].rb-tab-active{color:var(--rb-mg-color)!important;font-weight:600;border-bottom-color:var(--rb-mg-color)!important;}',
+            '.rb-tab[data-mode="checklist"].rb-tab-active{color:var(--rb-cl-color)!important;font-weight:600;border-bottom-color:var(--rb-cl-color)!important;}',
             '.rb-tab-right{margin-left:auto!important;color:#059669!important;}',
             '.rb-tab-right.rb-tab-active{border-bottom-color:#059669!important;}',
             '.rb-panel{padding:14px 18px 8px;overflow-y:auto;flex:1;min-height:0;}',
@@ -978,6 +990,9 @@
             '.rb-input-error{border-color:#dc2626!important;box-shadow:0 0 0 2px rgba(220,38,38,.15)!important;}',
             '.rb-max-badge{margin-left:auto;font-weight:600;color:#065f46;background:#d1fae5;border-radius:4px;padding:4px 10px;font-size:12.5px;white-space:nowrap;}',
             '.rb-max-badge strong{font-size:14px;}',
+            '#rb-rubric-max-badge{color:var(--rb-rubric-color)!important;background:color-mix(in srgb, var(--rb-rubric-color) 15%, white)!important;}',
+            '#rb-mg-max-badge{color:var(--rb-mg-color)!important;background:color-mix(in srgb, var(--rb-mg-color) 15%, white)!important;}',
+            '#rb-checklist-max-badge{color:var(--rb-cl-color)!important;background:color-mix(in srgb, var(--rb-cl-color) 15%, white)!important;}',
             '.rb-small-btn{background:#e0e7ff;color:#3730a3;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:12px;}',
             '.rb-small-btn:hover{background:#c7d2fe;}',
             '.rb-input{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:4px;padding:6px 8px;font-size:13px;font-family:inherit;}',
@@ -1038,9 +1053,9 @@
             '.rb-tpl-table td{padding:8px 10px;border-bottom:1px solid #f9fafb;vertical-align:middle;}',
             '.rb-tpl-table tr:hover td{background:#f8fafc;}',
             '.rb-tpl-badge{display:inline-block;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:600;}',
-            '.rb-tpl-badge-rubric{background:#dbeafe;color:#1d4ed8;}',
-            '.rb-tpl-badge-marking-guide{background:#d1fae5;color:#065f46;}',
-            '.rb-tpl-badge-checklist{background:#fef3c7;color:#92400e;}',
+            '.rb-tpl-badge-rubric{background:color-mix(in srgb, var(--rb-rubric-color) 15%, white);color:var(--rb-rubric-color);}',
+            '.rb-tpl-badge-marking-guide{background:color-mix(in srgb, var(--rb-mg-color) 15%, white);color:var(--rb-mg-color);}',
+            '.rb-tpl-badge-checklist{background:color-mix(in srgb, var(--rb-cl-color) 15%, white);color:var(--rb-cl-color);}',
             '.rb-tpl-actions{display:flex;gap:6px;}'
         ].join('\n');
         document.head.appendChild(s);
