@@ -142,6 +142,9 @@ function local_rubricbuilder_before_http_headers(): void {
             'itemlabelplaceholder'    => get_string('js_itemlabelplaceholder', 'local_rubricbuilder'),
             'maxlabel'                => get_string('js_maxlabel', 'local_rubricbuilder'),
             'itemdescplaceholder'     => get_string('js_itemdescplaceholder', 'local_rubricbuilder'),
+            'allornonelabel'          => get_string('js_allornonelabel', 'local_rubricbuilder'),
+            'allornonehint'           => get_string('js_allornonehint', 'local_rubricbuilder'),
+            'allornonebadge'          => get_string('js_allornonebadge', 'local_rubricbuilder'),
         ];
         // Strings containing a {$a} placeholder are resolved above with a
         // literal '__A__' marker (since the real value isn't known until

@@ -111,6 +111,9 @@ $string['js_additem']                 = '+ Add item';
 $string['js_itemlabelplaceholder']    = 'Item label';
 $string['js_maxlabel']                = 'Max';
 $string['js_itemdescplaceholder']     = 'Optional description...';
+$string['js_allornonelabel']          = 'All checked or 0';
+$string['js_allornonehint']           = 'When ticked, this section is worth its full points only if every item in it is checked — otherwise the whole section scores 0. When unticked, each item scores on its own.';
+$string['js_allornonebadge']          = 'All items checked, or 0 for this section';
 
 // Privacy strings.
 $string['privacy:metadata:local_rubricbuilder_templates']                  = 'Rubric and marking guide templates created by teachers.';

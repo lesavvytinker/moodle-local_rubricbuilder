@@ -1,5 +1,10 @@
 # Changelog — local_rubricbuilder
 
+## 0.15 (2026-10-04)
+
+- Checklist mode: new items now default to 1 point instead of 2.
+- Added an "All checked or 0" option per checklist section: when ticked, that section is worth its full points only if every item in it is checked — getting even one item wrong scores the whole section 0, rather than each item still counting on its own. Shown as a small checkbox next to the section's label, and carried into the generated HTML as a flag on that section (requires local_rubricgrader 0.25+ to actually score it that way — older versions still total each item independently).
+
 ## 0.14 (2026-09-08)
 
 - Added admin settings (Site administration → Plugins → Local plugins → Rubric Builder): a colour picker for each of the three modes — Rubric, Marking Guide, Checklist. Drives the tab highlight, the "Max possible" badge, and the template-list mode badge for that mode. Independent of Rubric Grader's own colour settings of the same name, since either plugin works standalone.

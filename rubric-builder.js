@@ -108,7 +108,11 @@
         var html = '<table class="rs-table rgdr-table rgdr-checklist" style="border-collapse:collapse;width:100%;" border="1" cellpadding="10">\n';
         html += '  <thead><tr>\n    <th style="text-align:left;">Item</th>\n    <th>Achieved</th>\n  </tr></thead>\n  <tbody>\n';
         sections.forEach(function(sec) {
-            html += '    <tr class="rgdr-cl-section-row"><td colspan="2" class="rgdr-cl-section-label"><strong>' + esc(sec.label) + '</strong></td></tr>\n';
+            var allOrNoneAttr = sec.allOrNone ? ' data-allornone="1"' : '';
+            var allOrNoneBadge = sec.allOrNone
+                ? ' <span class="rgdr-cl-allornone-badge" style="font-weight:normal;font-size:0.8em;color:#92400e;">(' + esc(t('allornonebadge', 'All items checked, or 0 for this section')) + ')</span>'
+                : '';
+            html += '    <tr class="rgdr-cl-section-row"' + allOrNoneAttr + '><td colspan="2" class="rgdr-cl-section-label"><strong>' + esc(sec.label) + '</strong>' + allOrNoneBadge + '</td></tr>\n';
             sec.items.forEach(function(item) {
                 html += '    <tr class="rgdr-cl-item-row">\n';
                 var descHtml = item.desc ? '<br><span class="rgdr-cl-item-desc">' + escNL(item.desc) + '</span>' : '<span class="rgdr-cl-item-desc"></span>';
@@ -261,7 +265,11 @@
     // State
     // rows: [{label, cols:[{score, desc}]}]
     // mgRows: [{label, desc, max}]
-    // checklistSections: [{label, items: [{label, desc, max}]}]
+    // checklistSections: [{label, allOrNone, items: [{label, desc, max}]}]
+    // allOrNone: when true, the section is scored as a single all-or-nothing
+    // block — full section marks only if every item in it is checked,
+    // otherwise zero for the whole section — instead of each item scoring
+    // independently.
     // loadedTemplateId/loadedTemplateName: set when a saved template has been
     // loaded into the editor, so "Update loaded template" knows what to
     // overwrite instead of always creating a new row.
@@ -275,7 +283,7 @@
         ];
         state.mgRows = [{label: 'Criterion 1', desc: '', max: '5'}];
         state.checklistSections = [
-            {label: 'Section 1', items: [{label: 'Item 1', desc: '', max: '2'}]},
+            {label: 'Section 1', allOrNone: false, items: [{label: 'Item 1', desc: '', max: '1'}]},
         ];
         state.loadedTemplateId = null;
         state.loadedTemplateName = '';
@@ -370,6 +378,12 @@
             var si = +inp.getAttribute('data-si'), ii = +inp.getAttribute('data-ii');
             if (state.checklistSections[si] && state.checklistSections[si].items[ii]) {
                 state.checklistSections[si].items[ii].max = inp.value;
+            }
+        });
+        document.querySelectorAll('.rb-cl-section-allornone').forEach(function(cb) {
+            var si = +cb.getAttribute('data-si');
+            if (state.checklistSections[si]) {
+                state.checklistSections[si].allOrNone = cb.checked;
             }
         });
     }
@@ -502,6 +516,9 @@
 
             var header = '<div class="rb-cl-section-header">';
             header += '<input class="rb-cl-section-label rb-input" type="text" value="' + esc(section.label) + '" data-si="' + si + '" placeholder="' + esc(t('sectionlabelplaceholder', 'Section label')) + '">';
+            header += '<label class="rb-cl-allornone-label" title="' + esc(t('allornonehint', 'When ticked, this section is worth its full points only if every item in it is checked — otherwise the whole section scores 0. When unticked, each item scores on its own.')) + '">';
+            header += '<input type="checkbox" class="rb-cl-section-allornone" data-si="' + si + '"' + (section.allOrNone ? ' checked' : '') + '> ' + esc(t('allornonelabel', 'All checked or 0'));
+            header += '</label>';
             header += '<button class="rb-small-btn rb-cl-add-item" data-si="' + si + '">' + esc(t('additem', '+ Add item')) + '</button>';
             header += '<button class="rb-copy-btn rb-cl-copy-section" data-si="' + si + '">&#10063; ' + esc(t('copybtn', 'Copy')) + '</button>';
             header += '<button class="rb-del-btn rb-cl-del-section" data-si="' + si + '">&times; ' + esc(t('removebtn', 'Remove')) + '</button>';
@@ -649,7 +666,7 @@
         // Add checklist section
         document.getElementById('rb-cl-add-section').addEventListener('click', function() {
             syncChecklist();
-            state.checklistSections.push({label: 'Section ' + (state.checklistSections.length + 1), items: [{label: 'Item 1', desc: '', max: '2'}]});
+            state.checklistSections.push({label: 'Section ' + (state.checklistSections.length + 1), allOrNone: false, items: [{label: 'Item 1', desc: '', max: '1'}]});
             renderChecklist();
         });
 
@@ -698,7 +715,7 @@
             if (t.classList.contains('rb-cl-add-item')) {
                 syncChecklist();
                 var si = +t.getAttribute('data-si');
-                state.checklistSections[si].items.push({label: 'Item ' + (state.checklistSections[si].items.length + 1), desc: '', max: '2'});
+                state.checklistSections[si].items.push({label: 'Item ' + (state.checklistSections[si].items.length + 1), desc: '', max: '1'});
                 renderChecklist();
             }
             // Delete checklist item
@@ -715,6 +732,7 @@
                 var origSection = state.checklistSections[csi];
                 state.checklistSections.splice(csi + 1, 0, {
                     label: origSection.label + ' (copy)',
+                    allOrNone: !!origSection.allOrNone,
                     items: origSection.items.map(function(it) { return {label: it.label, desc: it.desc, max: it.max}; })
                 });
                 renderChecklist();
@@ -1024,6 +1042,7 @@
             '.rb-cl-section-block{border:1px solid #e5e7eb;border-radius:6px;margin-bottom:14px;overflow:hidden;}',
             '.rb-cl-section-header{background:#fffbeb;padding:8px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;}',
             '.rb-cl-section-header .rb-input{flex:1;min-width:160px;font-weight:600;}',
+            '.rb-cl-allornone-label{display:flex;align-items:center;gap:4px;font-size:12px;color:#78350f;white-space:nowrap;cursor:pointer;}',
             '.rb-cl-items-body{padding:10px 12px;display:flex;flex-direction:column;gap:8px;}',
             '.rb-cl-item-row{display:flex;align-items:flex-start;gap:8px;border:1px solid #f3f4f6;border-radius:4px;padding:8px;background:#fafafa;flex-wrap:wrap;}',
             '.rb-cl-item-row .rb-cl-item-label{flex:2;min-width:140px;}',
