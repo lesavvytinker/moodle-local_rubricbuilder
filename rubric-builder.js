@@ -126,6 +126,146 @@
     }
 
     // -------------------------------------------------------------------------
+    // Reading an existing rubric / marking guide / checklist back out of the
+    // editor's current HTML, so the builder can be used to EDIT what's
+    // already there instead of always starting blank. These are the inverse
+    // of the generators above, and are guaranteed for tables the builder
+    // itself produced; older/hand-edited tables are read on a best-effort
+    // basis (anything unrecognised is simply left out).
+    // -------------------------------------------------------------------------
+    function nodeToPlainText(node, dropBadge) {
+        var c = node.cloneNode(true);
+        if (dropBadge) {
+            var badge = c.querySelector('.rs-cell-score-badge');
+            if (badge) {
+                var nx = badge.nextSibling;
+                if (nx && nx.nodeName === 'BR') nx.parentNode.removeChild(nx);
+                badge.parentNode.removeChild(badge);
+            }
+        }
+        Array.prototype.forEach.call(c.querySelectorAll('br'), function(br) {
+            br.parentNode.replaceChild(document.createTextNode('\n'), br);
+        });
+        return (c.textContent || '').replace(/ /g, ' ').trim();
+    }
+
+    function findExistingTable(root) {
+        return root.querySelector('table.rgdr-checklist, table.rs-marking-guide, table.rs-wmg, table.rs-rubric, table.rs-table, table.rgdr-table');
+    }
+
+    function tableMode(table) {
+        var cl = table.classList;
+        if (cl.contains('rgdr-checklist')) return 'checklist';
+        if (cl.contains('rs-marking-guide') || cl.contains('rs-wmg')) return 'marking-guide';
+        if (table.querySelector('.rs-cell')) return 'rubric';
+        return null;
+    }
+
+    function parseRubricTable(table) {
+        var rows = [];
+        Array.prototype.forEach.call(table.querySelectorAll('tbody tr'), function(tr) {
+            var tds = tr.children;
+            if (!tds.length) return;
+            var strong = tds[0].querySelector('strong');
+            var label = ((strong ? strong.textContent : tds[0].textContent) || '').trim();
+            var cols = [];
+            for (var i = 1; i < tds.length; i++) {
+                var td = tds[i];
+                if (td.classList.contains('rs-cell')) {
+                    var sc = td.getAttribute('data-score');
+                    cols.push({score: sc !== null ? String(sc) : '0', desc: nodeToPlainText(td, true)});
+                } else {
+                    cols.push({score: '0', desc: ''});
+                }
+            }
+            if (!cols.length) return;
+            rows.push({label: label || ('Criterion ' + (rows.length + 1)), cols: cols});
+        });
+        return rows;
+    }
+
+    function parseMarkingGuideTable(table) {
+        var rows = [];
+        Array.prototype.forEach.call(table.querySelectorAll('tr.rs-criterion-row'), function(tr) {
+            var lab = tr.querySelector('.rs-criterion-label');
+            var desc = tr.querySelector('.rs-criterion-desc');
+            var mx = tr.querySelector('.rs-max-input');
+            var max = mx && mx.value !== '' ? mx.value : '';
+            if (max === '') {
+                var w = tr.querySelector('.rs-wmg-weight-cell');
+                max = w ? String(parseFloat(w.textContent) || '') : '';
+            }
+            rows.push({
+                label: lab ? lab.textContent.trim() : ('Criterion ' + (rows.length + 1)),
+                desc: desc ? nodeToPlainText(desc, false) : '',
+                max: max !== '' ? max : '5'
+            });
+        });
+        return rows;
+    }
+
+    function parseChecklistTable(table) {
+        var sections = [];
+        var cur = null;
+        Array.prototype.forEach.call(table.querySelectorAll('tr.rgdr-cl-section-row, tr.rgdr-cl-item-row'), function(tr) {
+            if (tr.classList.contains('rgdr-cl-section-row')) {
+                var strong = tr.querySelector('.rgdr-cl-section-label strong');
+                var lbl = ((strong ? strong.textContent : tr.textContent) || '').trim();
+                cur = {label: lbl || ('Section ' + (sections.length + 1)), allOrNone: tr.getAttribute('data-allornone') === '1', items: []};
+                sections.push(cur);
+                return;
+            }
+            if (!cur) {
+                cur = {label: 'Section 1', allOrNone: false, items: []};
+                sections.push(cur);
+            }
+            var il = tr.querySelector('.rgdr-cl-item-label');
+            var idc = tr.querySelector('.rgdr-cl-item-desc');
+            var cell = tr.querySelector('.rgdr-cl-item-cell');
+            var max = cell ? cell.getAttribute('data-score') : null;
+            cur.items.push({
+                label: il ? il.textContent.trim() : ('Item ' + (cur.items.length + 1)),
+                desc: idc ? nodeToPlainText(idc, false) : '',
+                max: max !== null && max !== '' ? String(max) : '1'
+            });
+        });
+        return sections.filter(function(sec) { return sec.items.length > 0; });
+    }
+
+    // Returns {mode, data} for the first recognisable table in `html`, or
+    // null if there isn't one (blank editor, or unrelated content).
+    function parseExistingHtml(html) {
+        if (!html || !/<table/i.test(html)) return null;
+        var root = document.createElement('div');
+        root.innerHTML = html;
+        var table = findExistingTable(root);
+        if (!table) return null;
+        var mode = tableMode(table);
+        var data = null;
+        if (mode === 'rubric') data = parseRubricTable(table);
+        else if (mode === 'marking-guide') data = parseMarkingGuideTable(table);
+        else if (mode === 'checklist') data = parseChecklistTable(table);
+        if (!mode || !data || !data.length) return null;
+        return {mode: mode, data: data};
+    }
+
+    // Swaps the existing table inside `existing` for the freshly generated
+    // one, leaving anything else the teacher had in the box (instructions,
+    // notes) untouched. Falls back to the generated HTML on its own if
+    // either table can't be found.
+    function mergeIntoExisting(existing, generated) {
+        var wrap = document.createElement('div');
+        wrap.innerHTML = existing;
+        var oldTable = findExistingTable(wrap);
+        var gen = document.createElement('div');
+        gen.innerHTML = generated;
+        var newTable = gen.querySelector('table');
+        if (!oldTable || !newTable) return generated;
+        oldTable.parentNode.replaceChild(newTable, oldTable);
+        return wrap.innerHTML;
+    }
+
+    // -------------------------------------------------------------------------
     // Modal
     // -------------------------------------------------------------------------
     var OVERLAY_ID = 'rb-overlay';
@@ -165,7 +305,54 @@
         document.body.appendChild(overlay);
         wireEvents();
         switchMode('rubric');
+        loadExistingIntoBuilder();
         startKeepalive();
+    }
+
+    // If the editor already contains a rubric / marking guide / checklist,
+    // load it into the builder (and switch to the matching tab) so it can
+    // be edited rather than rebuilt. Shows a banner with a way back to a
+    // blank builder.
+    function loadExistingIntoBuilder() {
+        var existing = '';
+        try { existing = (_editor && _editor.getContent) ? _editor.getContent() : ''; } catch (e) { existing = ''; }
+        var parsed = parseExistingHtml(existing);
+        if (!parsed) return;
+
+        if (parsed.mode === 'rubric') state.rows = parsed.data;
+        else if (parsed.mode === 'marking-guide') state.mgRows = parsed.data;
+        else state.checklistSections = parsed.data;
+        state.sourceHtml = existing;
+        state.sourceMode = parsed.mode;
+
+        document.querySelectorAll('.rb-tab').forEach(function(b) {
+            b.classList.toggle('rb-tab-active', b.getAttribute('data-mode') === parsed.mode);
+        });
+        switchMode(parsed.mode);
+
+        var modeName = parsed.mode === 'rubric' ? t('tabrubric', 'Rubric')
+                     : parsed.mode === 'marking-guide' ? t('tabmarkingguide', 'Marking Guide')
+                     : t('tabchecklist', 'Checklist');
+        var bar = document.getElementById('rb-name-bar');
+        if (!bar) return;
+        var banner = document.createElement('div');
+        banner.id = 'rb-loaded-banner';
+        var msg = document.createElement('span');
+        msg.textContent = ta('loadedexisting', modeName, 'Loaded the existing {$a} from the editor — edit it here, then insert to update it in place.');
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'rb-small-btn';
+        btn.textContent = t('startblankinstead', 'Start blank instead');
+        btn.addEventListener('click', function() {
+            if (!confirm(t('confirmstartblank', 'Discard the loaded content and start with a blank builder?'))) return;
+            resetState();
+            var active = document.querySelector('.rb-tab-active');
+            switchMode(active ? active.getAttribute('data-mode') : 'rubric');
+            if (banner.parentNode) banner.parentNode.removeChild(banner);
+        });
+        banner.appendChild(msg);
+        banner.appendChild(btn);
+        bar.parentNode.insertBefore(banner, bar.nextSibling);
     }
 
     function closeBuilder() {
@@ -287,6 +474,8 @@
         ];
         state.loadedTemplateId = null;
         state.loadedTemplateName = '';
+        state.sourceHtml = null;
+        state.sourceMode = null;
     }
 
     // Draws attention to the (empty) template-name field instead of a bare
@@ -624,6 +813,12 @@
     }
 
     function insertHtmlAndClose(html) {
+        // If the builder was loaded from an existing table and is still on
+        // that same mode, replace just that table and keep the rest of the
+        // box (any instructions/notes around it) as it was.
+        if (html && state.sourceHtml && state.sourceMode === state.mode) {
+            html = mergeIntoExisting(state.sourceHtml, html);
+        }
         if (_editor && html) {
             _editor.setContent(html);
             _editor.fire('change');
@@ -1042,6 +1237,7 @@
             '.rb-cl-section-block{border:1px solid #e5e7eb;border-radius:6px;margin-bottom:14px;overflow:hidden;}',
             '.rb-cl-section-header{background:#fffbeb;padding:8px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;}',
             '.rb-cl-section-header .rb-input{flex:1;min-width:160px;font-weight:600;}',
+            '#rb-loaded-banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 16px;background:#f0f9ff;border-bottom:1px solid #bae6fd;font-size:13px;color:#075985;}',
             '.rb-cl-allornone-label{display:flex;align-items:center;gap:4px;font-size:12px;color:#78350f;white-space:nowrap;cursor:pointer;}',
             '.rb-cl-items-body{padding:10px 12px;display:flex;flex-direction:column;gap:8px;}',
             '.rb-cl-item-row{display:flex;align-items:flex-start;gap:8px;border:1px solid #f3f4f6;border-radius:4px;padding:8px;background:#fafafa;flex-wrap:wrap;}',

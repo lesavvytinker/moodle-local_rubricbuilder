@@ -145,6 +145,9 @@ function local_rubricbuilder_before_http_headers(): void {
             'allornonelabel'          => get_string('js_allornonelabel', 'local_rubricbuilder'),
             'allornonehint'           => get_string('js_allornonehint', 'local_rubricbuilder'),
             'allornonebadge'          => get_string('js_allornonebadge', 'local_rubricbuilder'),
+            'loadedexisting'          => get_string('js_loadedexisting', 'local_rubricbuilder', '__A__'),
+            'startblankinstead'       => get_string('js_startblankinstead', 'local_rubricbuilder'),
+            'confirmstartblank'       => get_string('js_confirmstartblank', 'local_rubricbuilder'),
         ];
         // Strings containing a {$a} placeholder are resolved above with a
         // literal '__A__' marker (since the real value isn't known until

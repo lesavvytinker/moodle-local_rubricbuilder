@@ -1,5 +1,9 @@
 # Changelog — local_rubricbuilder
 
+## 0.16 (2026-10-06)
+
+- Opening the builder on a box that already contains a rubric, marking guide or checklist now loads it (and switches to the matching tab) so it can be edited instead of rebuilt from nothing. A banner at the top says what was loaded, with a "Start blank instead" button. On insert, only the existing table is replaced — any instructions or notes around it in the box are left alone. Exact for tables the builder produced; older or hand-edited tables are read best-effort.
+
 ## 0.15 (2026-10-04)
 
 - Checklist mode: new items now default to 1 point instead of 2.

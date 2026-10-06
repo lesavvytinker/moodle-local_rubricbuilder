@@ -114,6 +114,9 @@ $string['js_itemdescplaceholder']     = 'Optional description...';
 $string['js_allornonelabel']          = 'All checked or 0';
 $string['js_allornonehint']           = 'When ticked, this section is worth its full points only if every item in it is checked — otherwise the whole section scores 0. When unticked, each item scores on its own.';
 $string['js_allornonebadge']          = 'All items checked, or 0 for this section';
+$string['js_loadedexisting']          = 'Loaded the existing {$a} from the editor — edit it here, then insert to update it in place.';
+$string['js_startblankinstead']       = 'Start blank instead';
+$string['js_confirmstartblank']       = 'Discard the loaded content and start with a blank builder?';
 
 // Privacy strings.
 $string['privacy:metadata:local_rubricbuilder_templates']                  = 'Rubric and marking guide templates created by teachers.';
